@@ -1,0 +1,215 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block content %}
+<div class="container mt-3 d-flex justify-content-end">
+    <div class="">
+
+        <a href="{% url 'autofill:send-form' section.pk %}" type="button" class="btn btn-success mb-2">
+            <i class="fas fa-check-circle"></i> Send Form Now
+        </a>
+
+        <a href="{% url 'autofill:regenerate-section' section.pk %}" type="button" class="btn btn-info mb-2">
+            <i class="fas fa-sync-alt"></i> Regenerate Form
+        </a>
+        <a href="{% url 'autofill:delete-section' section.pk %}" type="button" class="btn btn-danger mb-2">
+            <i class="fas fa-trash"></i> Delete Form
+        </a>
+    </div>
+</div>
+<div class="container mt-3">
+    <div class="row">
+        <div class="col d-flex align-items-center">
+            <h2>Form Info</h2>
+        </div>
+        <div class="col d-flex justify-content-end align-items-center">
+            <div>
+                {% if section.task.enabled %}
+                    <a href="{% url 'autofill:form-switch' section.pk %}" type="button" class="btn btn-danger mb-2">
+                        <i class="fas fa-times-circle"></i> Disable Auto Submit
+                    </a>
+                {% else %}
+                    <a href="{% url 'autofill:form-switch' section.pk %}" type="button" class="btn btn-success mb-2">
+                        <i class="fas fa-check-circle"></i> Activate Auto Submit
+                    </a>
+                {% endif %}
+        
+                <a href="{% url 'autofill:edit-section' section.pk %}" type="button" class="btn btn-primary mb-2">
+                    <i class="fas fa-pen"></i> Edit Form Info
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <tbody>
+              <tr>
+                <td>Form Name</td>
+                <td>{{ section.name }}</td>
+              </tr>
+              <tr>
+                  <td>Form URL</td>
+                  <td>{{ section.url|truncatechars:50 }} 
+                      <a target="_blank" href="{{ section.url }}" class="btn btn-light">
+                          <i class="fas fa-eye"></i>
+                      </a>
+                    </td>
+              </tr>
+              <tr>
+                  <td>Schedule Type</td>
+                  <td>{{ section.schedule_type }}</td>
+              </tr>
+              <tr>
+                  <td>Auto Submit</td>
+                  <td>
+                      
+                    {% if section.task.enabled %}
+                        <button class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Enabled
+                        </button>
+                    {% else %}
+                        <button class="btn btn-danger">
+                            <i class="fas fa-times-circle"></i> Disabled
+                        </button>
+                    {% endif %}
+                          
+                  </td>
+              </tr>
+            </tbody>
+          </table>
+    </div>
+</div>
+<div class="container mt-3">
+    <div class="row">
+        <div class="col d-flex align-items-center">
+            <h2>Schedule</h2>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <tbody>
+                
+                {% if section.task.interval %}
+                    <tr>
+                        <td>Every</td>
+                        <td>{{ section.task.interval.every }}</td>
+                    </tr>
+                    <tr>
+                        <td>Period</td>
+                        <td>{{ section.task.interval.period }}</td>
+                    </tr>
+                {% elif section.taks.clocked %}
+                    <tr>
+                        <td>Clocked Time</td>
+                        <td>{{ section.task.clocked.clocked_time }}</td>
+                    </tr>
+                {% elif section.task.crontab %}
+                    <tr>
+                        <td>Hour</td>
+                        <td>{{ section.task.crontab.hour }}</td>
+                    </tr>
+                    <tr>
+                        <td>Minute</td>
+                        <td>{{ section.task.crontab.minute }}</td>
+                    </tr>
+                    <tr>
+                        <td>Day of Week</td>
+                        <td>{{ section.task.crontab.day_of_week }}</td>
+                    </tr>
+                    <tr>
+                        <td>Day of Month</td>
+                        <td>{{ section.task.crontab.day_of_month }}</td>
+                    </tr>
+                    <tr>
+                        <td>Month of Year</td>
+                        <td>{{ section.task.crontab.month_of_year }}</td>
+                    </tr>
+                    <tr>
+                        <td>Timezone</td>
+                        <td>{{ section.task.crontab.timezone }}</td>
+                    </tr>
+                {% elif section.task.solar %}
+                    <tr>
+                        <td>Latitude</td>
+                        <td>{{ section.task.solar.latitude }}</td>
+                    </tr>
+                    <tr>
+                        <td>Longitude</td>
+                        <td>{{ section.task.solar.longitude }}</td>
+                    </tr>
+                    <tr>
+                        <td>Event</td>
+                        <td>{{ section.task.solar.event }}</td>
+                    </tr>
+                {% endif %}
+                    <tr>
+                        <td>Start Time</td>
+                        <td>
+                            
+                            {% if section.task.start_time %}
+                                {{ section.task.start_time }}
+                            {% else %}
+                                -
+                            {% endif %}
+                                
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>One Off Task</td>
+                        <td>
+                        {% if section.task.one_off %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %} 
+                            <i class="fas fa-times-circle text-danger"></i>
+                        {% endif %}
+                        </td>
+                    </tr>
+                    
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="container mt-3">
+    <div class="row">
+        <div class="col">
+            <h2>Question and Answers</h2>
+        </div>
+        <div class="col d-flex justify-content-end">
+            <a href="{% url 'autofill:answers' section.pk %}" type="button" class="btn btn-primary mb-2">
+                <i class="fas fa-arrow-circle-right"></i> Input Answer
+            </a>
+        </div>
+    </div> 
+    <div class="table-responsive">
+        <table class="table">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Question</th>
+                <th scope="col">Correct</th>
+                <th scope="col">Question Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+              {% for question in section.get_questions %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ question.text  }}</td>
+                    <td>
+                        {% if question.correct %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger"></i>
+                        {% endif %}
+                    </td>
+                    <td>{{ question.type }}</td>
+                </tr>
+              {% endfor %}
+                  
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock content %}
+    

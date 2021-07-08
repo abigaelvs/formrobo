@@ -1,0 +1,40 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">{{ form.latitude.label }}</label>
+                  {{ form.latitude }}
+                  <div class="form-text">Input the latitude of the location</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">{{ form.longitude.label }}</label>
+                  {{ form.longitude }}
+                  <div class="form-text">Input the longitude of the location</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.event.label }}</label>
+                    {{ form.event }}
+                    <div class="form-text">Select Solar Event</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">{{ form.start_time.label }}</label>
+                  {{ form.start_time }}
+                  <div class="form-text">Select start time to submit the form</div>
+              </div>
+              <div class="mb-3">
+                  {{ form.one_off }}
+                  <label class="form-label">{{ form.one_off.label }}</label>
+                  <div class="form-text">Select this is one off task or not</div>
+              </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+        </div>
+      </div>
+</div>
+{% endblock content %}

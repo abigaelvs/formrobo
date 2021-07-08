@@ -1,0 +1,40 @@
+{% extends 'autofill/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="table-responsive">
+        <table class="table">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Form Name</th>
+                <th scope="col">Date</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+              {% for log in logs %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td><a href="{% url 'autofill:detail-section' log.section.pk %}">{{ log.section.name }}</a></td>
+                        <td>{{ log.date }}</td>
+                        <td>
+                          
+                          {% if log.status == 'Success' %}
+                            <button class="btn btn-success">Success</button>
+                          {% else %}
+                            <button class="btn btn-danger">Failed</button>
+                          {% endif %}
+                            
+                        </td>
+                    </tr>
+              {% endfor %}
+                  
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock content %}
+    

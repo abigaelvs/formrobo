@@ -1,0 +1,37 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title d-flex justify-content-center">
+              <h2>Add New Form</h2>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">{{ form.name.label }}</label>
+                  {{ form.name }}
+                  <div class="form-text">Name your form</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">{{ form.url.label }}</label>
+                  {{ form.url }}
+                  <div class="form-text">URL of your google form</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.schedule_type.label }}</label>
+                    {{ form.schedule_type }}
+                    <div class="form-text">Choose when you want to submit your form</div>
+                </div>
+                <div class="d-flex justify-content-center">
+                  <button type="submit" style="width: 10rem;" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+      </div>
+    
+</div>
+{% endblock content %}
+    

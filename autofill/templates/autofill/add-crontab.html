@@ -1,0 +1,55 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">{{ form.hour.label }}</label>
+                  {{ form.hour }}
+                  <div class="form-text">Select the times (int 1-100) or * for all hour</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">{{ form.minute.label }}</label>
+                  {{ form.minute }}
+                  <div class="form-text">Input the minute (1-60) or * for all minute</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.day_of_week.label }}</label>
+                    {{ form.day_of_week }}
+                    <div class="form-text">Select Day of week or * for all day of week</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.day_of_month.label }}</label>
+                    {{ form.day_of_month }}
+                    <div class="form-text">Select Day of the month or * for all day of month</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.month_of_year.label }}</label>
+                    {{ form.month_of_year }}
+                    <div class="form-text">Select Month of the or * for all month of year</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.timezone.label }}</label>
+                    {{ form.timezone }}
+                    <div class="form-text">Select the timezone</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.start_time.label }}</label>
+                    {{ form.start_time }}
+                    <div class="form-text">Select start time to submit the form</div>
+                </div>
+                <div class="mb-3">
+                    {{ form.one_off }}
+                    <label class="form-label">{{ form.one_off.label }}</label>
+                    <div class="form-text">Select this is one off task or not</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+        </div>
+      </div>
+</div>
+{% endblock content %}

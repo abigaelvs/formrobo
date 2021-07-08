@@ -1,0 +1,25 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">{{ form.clocked_time.label }}</label>
+                  {{ form.clocked_time }}
+                  <div class="form-text">Select time that you want to submit the form</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">{{ form.start_time.label }}</label>
+                  {{ form.start_time }}
+                  <div class="form-text">Select start time to submit the form</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+        </div>
+      </div>
+</div>
+{% endblock content %}

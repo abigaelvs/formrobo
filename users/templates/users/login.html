@@ -1,0 +1,38 @@
+{% extends 'autofill/base.html' %}
+
+
+{% block navbar %}
+    
+{% endblock navbar %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+          <h2 class="card-title text-center">Login</h2>
+          <form action="" method="POST">
+              {% csrf_token %}
+              <fieldset>
+                <div class="mb-3">
+                    <label for="id_login" class="form-label">Email Address</label>
+                    <input class="form-control" name="email" id="id_login">
+                    <div id="emailHelp" class="form-text">Input your Email address.</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" name="password" id="id_password">
+                    <div id="emailHelp" class="form-text">Input your password.</div>
+                </div>
+              </fieldset>
+              <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary">Login</button>
+              </div>
+              <div class="mt-2">
+                <a href="{% url 'users:register' %}">Don't have any account?</a>
+              </div>
+          </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+    

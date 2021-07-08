@@ -1,0 +1,23 @@
+{% extends "autofill/base.html" %}
+
+
+{% block content %}
+
+<div class="container mt-2">
+  
+  <div class="card">
+    <div class="card-body">
+      <h1>Sign Out</h1>
+  
+      <p>Are you sure you want to sign out?</p>
+  
+      <form method="POST" action="">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Logout</button>
+        <a href="{% url 'autofill:dashboard' %}" type="button" class="btn btn-primary">Go Back</a>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
