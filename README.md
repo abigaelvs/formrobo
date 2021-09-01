@@ -4,6 +4,7 @@ A project to automate your google form process
 
 ## How to use
 - Clone/download this repository
+- Install Rabbitmq
 - Install all the requirements with 
 ```
 pip install -r requirements.txt
