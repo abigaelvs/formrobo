@@ -2,11 +2,62 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-3 d-flex justify-content-end">
-    <a href="{% url 'autofill:add-section' %}" type="button" class="btn btn-primary">
-        <i class="fas fa-plus-circle"></i> Add Form
-    </a>
+<!-- delete modal -->
+<div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Hapus Data</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Apakah anda yakin ingin menghapus <strong id="modal-strong"></strong>? 
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <a href="" class="btn btn-danger" id="modal-delete">Hapus</a>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- add form modal -->
+<div class="modal fade" id="addFormModal" tabindex="-1" aria-labelledby="addFormModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addFormModalLabel">Add New Form</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">{{ form.name.label }}</label>
+            {{ form.name }}
+            <div class="form-text">Name your form</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ form.url.label }}</label>
+            {{ form.url }}
+            <div class="form-text">URL of your google form</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-success"><i class="fas fa-plus-circle"></i> Add Form</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-3 d-flex justify-content-end">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFormModal">
+        <i class="fas fa-plus-circle"></i> Add Form
+    </button>
+</div>
+
 <div class="container mt-2">
     <div class="row">
         <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
@@ -62,37 +113,95 @@
         </div>
     </div>
 </div>
-<div class="container mt-5">
-    <div class="table-responsive">
-        <table class="table">
-            <thead class="table-dark">
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Form Name</th>
-                <th scope="col">Schedule Type</th>
-                <th scope="col">Auto Submit</th>
-              </tr>
-            </thead>
-            <tbody>
-              
-              {% for section in sections %}
-                    <tr>
-                        <th scope="row">{{ forloop.counter }}</th>
-                        <td><a href="{% url 'autofill:detail-section' section.pk %}">{{ section.name }}</a></td>
-                        <td>{{ section.schedule_type }}</td>
-                        <td>
-                            {% if section.task.enabled %}
-                                <i class="fas fa-check-circle text-success"></i>
-                            {% else %}
-                                <i class="fas fa-times-circle text-danger"></i>
-                            {% endif %}
-                        </td>
-                    </tr>
-              {% endfor %}
+<div class="container">
+  <div class="row">
+    <div class="col-lg-6 ">
+      <h2>Forms</h2>
+      
+      {% if sections %}
+        {% for s in sections %}
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-center align-items-center">
+              <div class="ms2 me-auto">
+                <div class="fw-bold">{{ s.name }}</div>
+                
+                {% if s.schedule_type == "Interval" %}
+                  <span class="badge bg-primary">{{ s.schedule_type }}</span>  
+                {% elif s.schedule_type == 'Clocked' %}
+                  <span class="badge bg-secondary">{{ s.schedule_type }}</span> 
+                {% elif s.schedule_type == 'Crontab' %}
+                  <span class="badge bg-info">{{ s.schedule_type }}</span> 
+                {% elif s.schedule_type == 'Solar' %}
+                  <span class="badge bg-dark">{{ s.schedule_type }}</span> 
+                {% endif %}
                   
-            </tbody>
-        </table>
+                
+                {% if s.task.enabled %}
+                  <span class="badge bg-success">Enabled</span>
+                {% else %}
+                  <span class="badge bg-danger">Disabled</span>
+                {% endif %}
+              </div>
+
+              <!-- info button -->
+              <a href="{{ s.get_absolute_url }}" class="badge bg-info rounded-circle p-2 ms-2">
+                <i class="fas fa-info-circle" style="color: white;"></i>
+              </a>
+
+              <!-- delete button -->
+              <span type="button" class="delete-button badge bg-danger rounded-circle p-2 ms-2" 
+              data-bs-toggle="modal" data-bs-target="#delete-modal"
+              data-name="{{ s.name }}" data-href="{% url 'autofill:delete-section' s.id %}">
+                <i class="fas fa-trash"></i>
+              </span>
+            </li>
+          </ul>
+          <br>
+        {% endfor %}
+      {% else %}
+        <div class="d-flex justify-content-center">
+          <img src="{% static 'img/empty_logs.svg' %}" width="100" alt="">
+        </div>
+        <p class="text-center mt-3">There are no forms for now</p>
+      {% endif %}
+        
     </div>
+  
+    <div class="col-lg-6 ">
+      <h2>Logs</h2>
+      
+      {% if logs %}
+        {% for log in logs %}
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-center align-items-center">
+              <div class="ms2 me-auto">
+                <div class="fw-bold">
+                  {{ log.section.name }}
+                  {% if log.status == "Success" %}
+                    <span class="badge bg-success">Success</span>
+                  {% else %}
+                    <span class="badge bg-danger">Failed</span>
+                  {% endif %}
+                </div>
+                {{ log.date }}  
+              </div>
+              <!-- log detail button -->
+              {% comment %} <a href="{% url 'autofill:log-detail' log.id %}" class="badge bg-info rounded-circle p-2 ms-2">
+                <i class="fas fa-info-circle" style="color: white;"></i>
+              </a> {% endcomment %}
+            </li>
+          </ul>
+        {% endfor %}
+      {% else %}
+      <br>
+          <div class="d-flex justify-content-center">
+            <img src="{% static 'img/empty_logs.svg' %}" width="100" alt="">
+          </div>
+          <p class="text-center mt-3">There are no logs for now</p>
+      {% endif %}
+        
+    </div>
+  </div>
 </div>
 {% endblock content %}
     

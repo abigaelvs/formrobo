@@ -1,215 +1,308 @@
 {% extends 'autofill/base.html' %}
-
+{% load static %}
 
 {% block content %}
-<div class="container mt-3 d-flex justify-content-end">
+<!-- schedule modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="scheduleModalLabel">Set Schedule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            Choose your schedule type:
+        </div>
+        <div class="modal-footer">
+            <a href="{% url 'autofill:add-schedule' 'interval' section.id %}" class="btn btn-primary">Interval</a>
+            <a href="{% url 'autofill:add-schedule' 'clocked' section.id %}" class="btn btn-secondary">Clocked</a>
+            <a href="{% url 'autofill:add-schedule' 'crontab' section.id %}" class="btn btn-info">Crontab</a>
+            <a href="{% url 'autofill:add-schedule' 'solar' section.id %}" class="btn btn-dark">Solar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- edit form modal -->
+<div class="modal fade" id="editFormModal" tabindex="-1" aria-labelledby="editFormModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editFormModalLabel">Edit Form Info</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form action="" method="POST">
+        <div class="modal-body">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">{{ form.name.label }}</label>
+                {{ form.name }}
+                <div class="form-text">Name your form</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-success">Save changes</button>
+        </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-paper-plane text-info" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Submitted
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                          {{ submitted }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Successfully Submitted
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                        {{ successfuly_submitted }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Failed to Submit
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                        {{ failed_submitted }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container mt-4 d-flex justify-content-end">
     <div class="">
 
         <a href="{% url 'autofill:send-form' section.pk %}" type="button" class="btn btn-success mb-2">
-            <i class="fas fa-check-circle"></i> Send Form Now
+            <i class="fas fa-paper-plane"></i> Send Form Now
         </a>
 
-        <a href="{% url 'autofill:regenerate-section' section.pk %}" type="button" class="btn btn-info mb-2">
-            <i class="fas fa-sync-alt"></i> Regenerate Form
-        </a>
         <a href="{% url 'autofill:delete-section' section.pk %}" type="button" class="btn btn-danger mb-2">
             <i class="fas fa-trash"></i> Delete Form
         </a>
     </div>
 </div>
-<div class="container mt-3">
+<div class="container mt-4">
     <div class="row">
-        <div class="col d-flex align-items-center">
+        <div class="col-lg-6">
             <h2>Form Info</h2>
+    
+            <button type="button" class="btn btn-warning mb-2" data-bs-toggle="modal" data-bs-target="#editFormModal">
+                <i class="fas fa-pen"></i> Edit Form Info
+            </button>
+
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Form Name
+                    <span>{{ section.name }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Form URL
+                    <a href="{{ section.url }}" target="_blank" class="badge bg-dark p-2 rounded-circle">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Schedule Type
+                    <span>{{ section.schedule_type }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Auto Submit
+                    
+                    {% if section.task.enabled %}
+                        <span class="badge bg-success p-2 rounded-circle">
+                            <i class="fas fa-check-circle"></i>
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger p-2 rounded-circle">
+                            <i class="fas fa-times-circle"></i>
+                        </span>
+                    {% endif %}
+                        
+                </li>
+            </ul>
         </div>
-        <div class="col d-flex justify-content-end align-items-center">
-            <div>
+        <div class="col-lg-6">
+            <h2>Schedule</h2>
+
+            {% if section.task %}
+
                 {% if section.task.enabled %}
                     <a href="{% url 'autofill:form-switch' section.pk %}" type="button" class="btn btn-danger mb-2">
                         <i class="fas fa-times-circle"></i> Disable Auto Submit
                     </a>
                 {% else %}
                     <a href="{% url 'autofill:form-switch' section.pk %}" type="button" class="btn btn-success mb-2">
-                        <i class="fas fa-check-circle"></i> Activate Auto Submit
+                        <i class="fas fa-check-circle"></i> Activate
                     </a>
-                {% endif %}
-        
-                <a href="{% url 'autofill:edit-section' section.pk %}" type="button" class="btn btn-primary mb-2">
-                    <i class="fas fa-pen"></i> Edit Form Info
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="table-responsive">
-        <table class="table">
-            <tbody>
-              <tr>
-                <td>Form Name</td>
-                <td>{{ section.name }}</td>
-              </tr>
-              <tr>
-                  <td>Form URL</td>
-                  <td>{{ section.url|truncatechars:50 }} 
-                      <a target="_blank" href="{{ section.url }}" class="btn btn-light">
-                          <i class="fas fa-eye"></i>
-                      </a>
-                    </td>
-              </tr>
-              <tr>
-                  <td>Schedule Type</td>
-                  <td>{{ section.schedule_type }}</td>
-              </tr>
-              <tr>
-                  <td>Auto Submit</td>
-                  <td>
-                      
-                    {% if section.task.enabled %}
-                        <button class="btn btn-success">
-                            <i class="fas fa-check-circle"></i> Enabled
-                        </button>
-                    {% else %}
-                        <button class="btn btn-danger">
-                            <i class="fas fa-times-circle"></i> Disabled
-                        </button>
-                    {% endif %}
-                          
-                  </td>
-              </tr>
-            </tbody>
-          </table>
-    </div>
-</div>
-<div class="container mt-3">
-    <div class="row">
-        <div class="col d-flex align-items-center">
-            <h2>Schedule</h2>
-        </div>
-    </div>
-    <div class="table-responsive">
-        <table class="table">
-            <tbody>
+                    
+            {% endif %}
+            <ul class="list-group">
                 
                 {% if section.task.interval %}
-                    <tr>
-                        <td>Every</td>
-                        <td>{{ section.task.interval.every }}</td>
-                    </tr>
-                    <tr>
-                        <td>Period</td>
-                        <td>{{ section.task.interval.period }}</td>
-                    </tr>
-                {% elif section.taks.clocked %}
-                    <tr>
-                        <td>Clocked Time</td>
-                        <td>{{ section.task.clocked.clocked_time }}</td>
-                    </tr>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Every
+                        <span>{{ section.task.interval.every }} {{ section.task.interval.period }}</span>
+                    </li>
+                {% elif section.task.clocked %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Clocked Time 
+                        <span>{{ section.task.clocked.clocked_time }}</span>
+                    </li>
                 {% elif section.task.crontab %}
-                    <tr>
-                        <td>Hour</td>
-                        <td>{{ section.task.crontab.hour }}</td>
-                    </tr>
-                    <tr>
-                        <td>Minute</td>
-                        <td>{{ section.task.crontab.minute }}</td>
-                    </tr>
-                    <tr>
-                        <td>Day of Week</td>
-                        <td>{{ section.task.crontab.day_of_week }}</td>
-                    </tr>
-                    <tr>
-                        <td>Day of Month</td>
-                        <td>{{ section.task.crontab.day_of_month }}</td>
-                    </tr>
-                    <tr>
-                        <td>Month of Year</td>
-                        <td>{{ section.task.crontab.month_of_year }}</td>
-                    </tr>
-                    <tr>
-                        <td>Timezone</td>
-                        <td>{{ section.task.crontab.timezone }}</td>
-                    </tr>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Time 
+                        <span>{{ section.task.crontab.hour }}:{{ section.task.crontab.minute }}</span>
+                    </li><li class="list-group-item d-flex justify-content-between align-items-center">
+                        Day of Week 
+                        <span>{{ section.task.crontab.day_of_week }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Day of Month 
+                        <span>{{ section.task.crontab.day_of_month }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Month of Year 
+                        <span>{{ section.task.crontab.month_of_year }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Timezone 
+                        <span>{{ section.task.crontab.timezone }}</span>
+                    </li>
                 {% elif section.task.solar %}
-                    <tr>
-                        <td>Latitude</td>
-                        <td>{{ section.task.solar.latitude }}</td>
-                    </tr>
-                    <tr>
-                        <td>Longitude</td>
-                        <td>{{ section.task.solar.longitude }}</td>
-                    </tr>
-                    <tr>
-                        <td>Event</td>
-                        <td>{{ section.task.solar.event }}</td>
-                    </tr>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Latitude 
+                        <span>{{ section.task.solar.latitude }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Longitude 
+                        <span>{{ section.task.solar.longitude }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Event 
+                        <span>{{ section.task.solar.event }}</span>
+                    </li>
                 {% endif %}
-                    <tr>
-                        <td>Start Time</td>
-                        <td>
-                            
-                            {% if section.task.start_time %}
-                                {{ section.task.start_time }}
-                            {% else %}
-                                -
-                            {% endif %}
-                                
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>One Off Task</td>
-                        <td>
-                        {% if section.task.one_off %}
-                            <i class="fas fa-check-circle text-success"></i>
-                        {% else %} 
-                            <i class="fas fa-times-circle text-danger"></i>
-                        {% endif %}
-                        </td>
-                    </tr>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Start Time 
+                    <span>{{ section.task.start_time }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    One Off Task
                     
-            </tbody>
-        </table>
+                    {% if section.task.one_off %}
+                        <span class="badge bg-success p-2 rounded-circle">
+                            <i class="fas fa-check-circle"></i>
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger p-2 rounded-circle">
+                            <i class="fas fa-times-circle"></i>
+                        </span>
+                    {% endif %}
+                        
+                </li>   
+            </ul>
+            {% else %}
+            <br>
+            <div class="d-flex justify-content-center">
+                <img src="{% static 'img/schedule.svg' %}" width="150" alt="">
+              </div>
+              <p class="text-center mt-3">Schedule has not set yet</p>
+              <p class="text-center">
+                  <button type="button" class="btn btn-warning"
+                  data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                    <i class="fas fa-clock"></i> Set Schedule
+                </button>
+              </p>
+            {% endif %}
+                
+        </div>
     </div>
 </div>
-<div class="container mt-3">
-    <div class="row">
-        <div class="col">
-            <h2>Question and Answers</h2>
-        </div>
-        <div class="col d-flex justify-content-end">
-            <a href="{% url 'autofill:answers' section.pk %}" type="button" class="btn btn-primary mb-2">
-                <i class="fas fa-arrow-circle-right"></i> Input Answer
-            </a>
-        </div>
-    </div> 
-    <div class="table-responsive">
-        <table class="table">
-            <thead class="table-dark">
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Question</th>
-                <th scope="col">Correct</th>
-                <th scope="col">Question Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              
-              {% for question in section.get_questions %}
-                <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ question.text  }}</td>
-                    <td>
-                        {% if question.correct %}
-                            <i class="fas fa-check-circle text-success"></i>
+<div class="container mt-4">
+    <h2>Question and Answers</h2>
+    <a href="{% url 'autofill:answers' section.pk %}" class="btn btn-primary mb-2">
+        <i class="fas fa-arrow-circle-right"></i> Answers
+    </a>
+    <a href="{% url 'autofill:regenerate-question' section.pk %}" type="button" class="btn btn-info mb-2">
+        <i class="fas fa-sync-alt"></i> Regenerate Question
+    </a>
+    {% for q, field in questions.items %}
+        <ul class="list-group mt-2">
+            <li class="list-group-item d-flex justify-content-center align-items-center">
+                <div class="ms2 me-auto">
+                    <div class="fw-bold">{{ q }}</div>
+                    <p class="mb-1">
+                        {% if field.correct %}
+                            {% for a in field.answers %}
+                                {{ a }}
+                            {% endfor %}
                         {% else %}
-                            <i class="fas fa-times-circle text-danger"></i>
-                        {% endif %}
-                    </td>
-                    <td>{{ question.type }}</td>
-                </tr>
-              {% endfor %}
-                  
-            </tbody>
-        </table>
-    </div>
+                            (Question not answered)
+                        {% endif %}    
+                    </p>
+                    <small>{{ field.question_type }}</small>
+                </div>
+                
+                {% if field.correct %}
+                    <span class="badge bg-success rounded-circle p-2">
+                        <i class="fas fa-check-circle" ></i>
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger rounded-circle p-2">
+                        <i class="fas fa-times-circle" ></i>
+                    </span>
+                {% endif %}
+                    
+            </li>
+        </ul>
+    {% endfor %}
+        
 </div>
+<script>
+var inputs = document.querySelectorAll("input[type=text]");
+inputs.forEach(input => {
+    input.setAttribute('size', input.getAttribute('placeholder').length);
+})
+var selects = document.querySelectorAll("select")
+selects.forEach(select => {
+    length = select.querySelectorAll("option").length
+    select.setAttribute("size", length)
+})
+</script>
 {% endblock content %}
     

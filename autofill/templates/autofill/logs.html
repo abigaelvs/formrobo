@@ -2,39 +2,97 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-3">
-    <div class="table-responsive">
-        <table class="table">
-            <thead class="table-dark">
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Form Name</th>
-                <th scope="col">Date</th>
-                <th scope="col">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              
-              {% for log in logs %}
-                    <tr>
-                        <th scope="row">{{ forloop.counter }}</th>
-                        <td><a href="{% url 'autofill:detail-section' log.section.pk %}">{{ log.section.name }}</a></td>
-                        <td>{{ log.date }}</td>
-                        <td>
-                          
-                          {% if log.status == 'Success' %}
-                            <button class="btn btn-success">Success</button>
-                          {% else %}
-                            <button class="btn btn-danger">Failed</button>
-                          {% endif %}
-                            
-                        </td>
-                    </tr>
-              {% endfor %}
-                  
-            </tbody>
-        </table>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-paper-plane text-info" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Total Logs
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                          {{ logs.count }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Success
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                          {{ succesfully_submitted }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-3">
+            <div class="card">
+                <div class="card-body">
+                  <div class="row">
+                      <div class="col-3 d-flex align-items-center">
+                        <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+                      </div>
+                      <div class="col-6 d-flex align-items-center">
+                        Failed
+                      </div>
+                      <div class="col-3 d-flex align-item-center" style="font-size: 3rem;">
+                          {{ failed_to_submit }}
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h2>Logs</h2>
+      
+      {% if logs %}
+        {% for log in logs %}
+          <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-center align-items-center">
+              <div class="ms2 me-auto">
+                <div class="fw-bold">
+                  {{ log.section.name }}
+                  {% if log.status == "Success" %}
+                    <span class="badge bg-success">Success</span>
+                  {% else %}
+                    <span class="badge bg-danger">Failed</span>
+                  {% endif %}
+                </div>
+                {{ log.date }}  
+              </div>
+              <!-- log detail button -->
+              {% comment %} <a href="{% url 'autofill:log-detail' log.id %}" class="badge bg-info rounded-circle p-2 ms-2">
+                <i class="fas fa-info-circle" style="color: white;"></i>
+              </a> {% endcomment %}
+            </li>
+          </ul>
+        {% endfor %}
+      {% else %}
+      <br>
+          <div class="d-flex justify-content-center">
+            <img src="{% static 'img/empty_logs.svg' %}" width="100" alt="">
+          </div>
+          <p class="text-center mt-3">There are no logs for now</p>
+      {% endif %}
+        
+    </div>
+  </div>
+</div>
 {% endblock content %}
-    
