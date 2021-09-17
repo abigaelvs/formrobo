@@ -6,6 +6,7 @@ from django.contrib import messages
 
 from .forms import CustomUserCreationForm
 
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('autofill:dashboard')
@@ -13,7 +14,6 @@ def login_view(request):
         email = request.POST['email']
         password = request.POST['password']
         user = authenticate(request, email=email, password=password)
-        print(user)
         if user is not None:
             login(request, user)
             messages.success(request, f'Successfully login as {email}')
@@ -21,6 +21,7 @@ def login_view(request):
         else:
             messages.warning(request, 'Email or wrong password')
     return render(request, 'users/login.html')
+
 
 def logout_view(request):
     if request.method == 'POST':
