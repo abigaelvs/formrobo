@@ -3,12 +3,13 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+from decouple import config
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'r@51l&obf(_#js80kxdd^_jev7#m%iid7=*oq)4pl7ie5%)jhc'
+SECRET_KEY = config("SECRET_KEY")
 
 
 # Application definition
@@ -111,7 +112,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = 'users.User'
 
-
+LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'autofill:dashboard'
 
 # celery settings
