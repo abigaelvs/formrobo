@@ -9,160 +9,201 @@ import requests
 
 from bs4 import BeautifulSoup
 
+from datetime import datetime
 import time
 
 # autofill models
-from .models import Section, Question, Answer, Log
+from .models import Section, Question, Log
 
-def check_form(id, url):
+# browser user agent
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
+}
 
-    section = Section.objects.get(id=id)
-    questions = section.get_questions()
-
-    # browser user agent
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36'
-    }
-
+def get_fields(url: str):
+    """Get all of the Google Form fields"""
     page = requests.get(url, headers=headers)
-
-    soup = BeautifulSoup(page.content, 'html.parser')
-
-    # grab all the fields class
+    soup = BeautifulSoup(page.content, "html.parser")
     fields = soup.find_all(class_='freebirdFormviewerComponentsQuestionBaseRoot')
 
-    if questions.exists():
-        for question in questions:
-            answers = question.get_answers()
-            for answer in answers:
-                answer.delete()
-            question.delete()
+    return fields
 
-    # loop through all the field class and specify the question type
-    for field in fields:
+
+def check_form(url: str) -> dict:
+    """
+        1. Scrape link that user input to the formulir form
+        2. Grab all the field class
+        3. Loop trough all the fields and specify the question type
+        5. Get the field question
+        6. Save all the question and answers in dictionary
+    """
+
+    fields = get_fields(url)
+
+    result = {}
+
+    qclass = {
+        "TextInput": "quantumWizTextinputPaperinputInput",
+        "Waktu": "freebirdFormviewerComponentsQuestionTimeLabel",
+        "Tanggal": "freebirdFormviewerComponentsQuestionDateLabel",
+        "Paragraf": "quantumWizTextinputPapertextareaInput",
+        "Radio": "appsMaterialWizToggleRadiogroupOffRadio",
         
-        teks = field.find(class_='freebirdFormviewerComponentsQuestionBaseTitle').text
-        
-        tanggal = field.find(class_='freebirdFormviewerComponentsQuestionDateLabel')
-        waktu = field.find(class_='freebirdFormviewerComponentsQuestionTimeLabel')
-        jawaban_singkat = field.find(class_='quantumWizTextinputPaperinputInput')
-        paragraf = field.find(class_='quantumWizTextinputPapertextareaInput')
-        radio = field.find_all(class_='appsMaterialWizToggleRadiogroupOffRadio')
-        checkbox = field.find_all(class_='quantumWizTogglePapercheckboxInk')
-        dropdown = field.find(class_='quantumWizMenuPaperselectOption')
+        "PilihanGanda": {
+            "elements": "docssharedWizToggleLabeledLabelWrapper",
+            "label": "docssharedWizToggleLabeledLabelText"
+        },
+        "KisiPilihanGanda": {
+            "main_class": "appsMaterialWizToggleRadiogroupGroupContent",
+            "row_col": "freebirdFormviewerComponentsQuestionGridColumnHeader",
+            "col": "freebirdFormviewerComponentsQuestionGridCell",
+            "header": "freebirdFormviewerComponentsQuestionGridRowHeader"
+        },
+        "SkalaLinier": {
+            "elements": "freebirdMaterialScalecontentColumn",
+            "label": "freebirdMaterialScalecontentLabel"
+        },
+        "KotakCentang": {
+            "main_class": "quantumWizTogglePapercheckboxInk",
+            "elements": "docssharedWizToggleLabeledLabelWrapper",
+            "label": "docssharedWizToggleLabeledLabelText"
+        },
+        "PetakKotakCentang": {
+            "main_class": "freebirdFormviewerComponentsQuestionGridCell",
+            "row_el": "freebirdFormviewerComponentsQuestionGridCheckboxGroup",
+            "row_header": "freebirdFormviewerComponentsQuestionGridRowHeader",
+            "col_el": "freebirdFormviewerComponentsQuestionGridColumnHeader",
+        },
+        "DropDown": "quantumWizMenuPaperselectContent"
+    }
 
-        question = Question(
-            section=section,
-            text=teks
-        )
+    for f in fields:
+        teks = f.find(class_='freebirdFormviewerComponentsQuestionBaseTitle').text
+        textinput = f.find(class_=qclass["TextInput"])
+        paragraf = f.find(class_=qclass["Paragraf"])
+        radio = f.find(class_=qclass["Radio"])
+        checkbox = f.find(class_=qclass["KotakCentang"]["main_class"])
+        dropdown = f.find(class_=qclass["DropDown"])
 
-        element_answers = []
-        answer_type = ''
-        
-        if tanggal:
-            question.type = 'Tanggal'
-            answer_type += question.type
-        elif waktu:
-            question.type = 'Waktu'
-            answer_type += question.type
-        elif jawaban_singkat:
-            placeholder = field.find(class_='quantumWizTextinputPaperinputPlaceholder')
-            if placeholder:
-                question.type = 'Jawaban Singkat'
-                answer_type += question.type
-        elif radio:
-            pilihan_ganda = field.find(class_='docssharedWizToggleLabeledLabelWrapper')
-            skala_linier = field.find_all(class_='freebirdMaterialScalecontentColumn')
-            kisi_pilihan_ganda = field.find_all(class_='freebirdFormviewerComponentsQuestionGridCell')
-            if pilihan_ganda:
-                question.type = 'Pilihan Ganda'
-                answer_type += question.type
+        if textinput:
+            waktu = f.find(class_=qclass["Waktu"])
+            tanggal = f.find(class_=qclass["Tanggal"])
 
-                elements = field.find_all(class_='docssharedWizToggleLabeledLabelWrapper')
-
-                for element in elements:
-                    element_label = element.find(class_='docssharedWizToggleLabeledLabelText').text
-                    element_answers.append(element_label)
-            elif skala_linier:
-                question.type = 'Skala Linier'
-                answer_type += question.type
-
-                for element in skala_linier:
-                    element_label = element.find(class_='freebirdMaterialScalecontentLabel').text
-                    element_answers.append(element_label)
-
-            elif kisi_pilihan_ganda:
-                question.type = 'Kisi Pilihan Ganda'
-                answer_type += question.type
-                row_elements = field.find_all(class_='appsMaterialWizToggleRadiogroupGroupContent')
-                col_elements = field.find(class_='freebirdFormviewerComponentsQuestionGridColumnHeader')
-                all_header = []
-                all_columns = []
-                for element in row_elements:
-                    row_header = element.find(class_='freebirdFormviewerComponentsQuestionGridRowHeader').text
-                    all_header.append(row_header)
-                col = col_elements.find_all(class_='freebirdFormviewerComponentsQuestionGridCell')
-                for c in col:
-                    if c.text != '':
-                        all_columns.append(c.text)
-
-                for header in all_header:
-                    for col in all_columns:
-                        element_answers.append(f'{header},{col}')
-        elif paragraf:
-            question.type = 'Paragraf'
-            answer_type += question.type
-        elif checkbox:
-            petak_kotak_centang = field.find_all(class_='freebirdFormviewerComponentsQuestionGridCell')
-            if petak_kotak_centang:
-                question.type = 'Petak Kotak Centang'
-                answer_type += question.type
-
-                row_elements = field.find_all(class_='freebirdFormviewerComponentsQuestionGridCheckboxGroup')
-                col_elements = field.find(class_='freebirdFormviewerComponentsQuestionGridColumnHeader')
-                all_header = []
-                all_columns = []
-                for element in row_elements:
-                    row_header = element.find(class_='freebirdFormviewerComponentsQuestionGridRowHeader').text
-                    all_header.append(row_header)
-                col = col_elements.find_all(class_='freebirdFormviewerComponentsQuestionGridCell')
-                for c in col:
-                    if c.text != '':
-                        all_columns.append(c.text)
-                
-                for header in all_header:
-                    for col in all_columns:
-                        element_answers.append(f'{header},{col}')
+            if waktu:
+                result[teks] = {"question_type": "Waktu"}
+            elif tanggal:
+                result[teks] = {"question_type": "Tanggal"}
             else:
-                question.type = 'Kotak Centang'
-                answer_type += question.type
-                elements = field.find_all(class_='docssharedWizToggleLabeledLabelWrapper')
-                for element in elements:
-                    element_title = element.find(class_='docssharedWizToggleLabeledLabelText').text
-                    element_answers.append(element_title)
+                result[teks] = {"question_type": "JawabanSingkat"}
+
+            # set the choice type
+            result[teks]["choice_type"] = "SingleElement"
+
+        elif paragraf:
+            result[teks] = {"question_type": "Paragraf", "choice_type": "SingleElement"}
+
+        elif radio:
+            pilihanganda = f.find_all(class_=qclass["PilihanGanda"]["elements"])
+            skalalinier = f.find_all(class_=qclass["SkalaLinier"]["elements"])
+            kisipilihanganda = f.find_all(class_=qclass["KisiPilihanGanda"]["main_class"])
+
+            if pilihanganda:
+                result[teks] = {"question_type": "PilihanGanda", "answers": []}
+
+                for el in pilihanganda:
+                    label = el.find(class_=qclass["PilihanGanda"]["label"]).text
+                    result[teks]["answers"].append(label)
+
+            elif skalalinier:
+                result[teks] = {"question_type": "SkalaLinier", "answers": []}
+
+                for el in skalalinier:
+                    label = el.find(class_=qclass["SkalaLinier"]["label"]).text
+                    result[teks]["answers"].append(label)
+
+            elif kisipilihanganda:
+                result[teks] = {"question_type": "KisiPilihanGanda", "answers": {"row": [], "col": []}}
+                row_col = f.find(class_=qclass["KisiPilihanGanda"]["row_col"])
+                col = row_col.find_all(class_=qclass["KisiPilihanGanda"]["col"])[1:]
+
+                for r in kisipilihanganda:
+                    header = r.find(class_=qclass["KisiPilihanGanda"]["header"]).text
+                    result[teks]["answers"]["row"].append(header)
+
+                for c in col:
+                    result[teks]["answers"]["col"].append(c.text)
+
+            # set the choice type
+            result[teks]["choice_type"] = "MultipleElement"
+
+        elif checkbox:
+            petakkotakcentang = f.find_all(class_=qclass["PetakKotakCentang"]["main_class"])
+            
+            if petakkotakcentang:
+                result[teks] = {"question_type": "PetakKotakCentang", "answers": {"row": [], "col": []}}
+                row_el = f.find_all(class_=qclass["PetakKotakCentang"]["row_el"])
+                col_el = f.find(class_=qclass["PetakKotakCentang"]["col_el"])
+                
+                for r in row_el:
+                    header = r.find(class_=qclass["PetakKotakCentang"]["row_header"]).text
+                    result[teks]["answers"]["row"].append(header)
+                
+                for c in col_el.find_all(class_=qclass["PetakKotakCentang"]["main_class"])[1:]:
+                    result[teks]["answers"]["col"].append(c.text)
+            else:
+                result[teks] = {"question_type": "KotakCentang", "answers": []}
+                elements = f.find_all(class_=qclass["KotakCentang"]["elements"])
+                for el in elements:
+                    el_title = el.find(class_=qclass["KotakCentang"]["label"]).text
+                    result[teks]["answers"].append(el_title)
+            
+            # set the choice type
+            result[teks]["choice_type"] = "MultipleElement"
+        
         elif dropdown:
-            question.type = 'Drop Down'
-            answer_type += question.type
-            elements = field.find_all(class_='quantumWizMenuPaperselectContent')
-            element_answers = []
-            for element in elements:
-                element_label = element.text
-                element_answers.append(element_label)
-        question.save()
+            result[teks] = {"question_type": "DropDown", "choice_type": "SingleElement", "answers": []}
+            elements = f.find_all(class_=qclass["DropDown"])
+            for el in elements:
+                result[teks]["answers"].append(el.text)
 
-        for el in element_answers:
-            answer = Answer(
-                question=question,
-                text=el,
-                type=answer_type
-            )
+    return result 
 
-            answer.save()
 
-def submit_form(id):
+def submit_form(id: int):
 
+    qclass = {
+        "JawabanSingkat": "quantumWizTextinputPaperinputInput",
+        "Paragraf": "quantumWizTextinputPapertextareaInput",
+        "Waktu": "freebirdFormviewerComponentsQuestionTimeTimeInputs",
+        "Tanggal": "quantumWizTextinputPaperinputInput",
+        "SkalaLinier": {
+            "main_class": "freebirdMaterialScalecontentColumn",
+            "sub_class": "appsMaterialWizToggleRadiogroupOffRadio",
+            "label": "freebirdMaterialScalecontentLabel"
+        },
+        "PilihanGanda": {
+            "main_class": "docssharedWizToggleLabeledLabelWrapper",
+            "sub_class": "appsMaterialWizToggleRadiogroupOffRadio",
+            "label": "docssharedWizToggleLabeledLabelText"
+        },
+        "KotakCentang": {
+            "main_class": "docssharedWizToggleLabeledLabelWrapper",
+            "sub_class": "quantumWizTogglePapercheckboxInnerBox",
+            "label": "docssharedWizToggleLabeledLabelText"
+        },
+        "KisiPilihanGanda": {
+            "row_elements": "appsMaterialWizToggleRadiogroupGroupContent",
+            "input": "appsMaterialWizToggleRadiogroupOffRadio"
+        },
+        "PetakKotakCentang": {
+            "row_elements": "freebirdFormviewerComponentsQuestionGridCheckboxGroup",
+            "input": "freebirdFormviewerComponentsQuestionGridCheckbox"
+        },
+        "DropDown": "quantumWizMenuPaperselectOption"
+    }
+    
     section = Section.objects.get(id=id)
-    questions = section.question_set.all()
+    questions = Question.objects.get_question_dict(id)
 
     PATH = "D:\Projects\Automatic Google Form Fill\src\chromedriver.exe"
     driver = webdriver.Chrome(PATH)
@@ -170,102 +211,90 @@ def submit_form(id):
     driver.get(section.url)
 
     time.sleep(1)
-    
+
     try:
         check = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CLASS_NAME, "freebirdCommonViewProductnameLockupText"))
         )
+
         fields = driver.find_elements_by_class_name("freebirdFormviewerComponentsQuestionBaseRoot")
-        for field in fields:
-            field_question = field.find_element_by_class_name("freebirdFormviewerComponentsQuestionBaseTitle").text
-            for question in questions:
-                if question.text == field_question:
-                    answers = Answer.objects.filter(question=question, correct=True)
-                    if answers.exists():
-                        for answer in answers:
-                            if question.type == 'Jawaban Singkat':
-                                element = field.find_element_by_class_name('quantumWizTextinputPaperinputInput')
-                                element.send_keys(answer.text)
-                            elif question.type == 'Paragraf':
-                                element = field.find_element_by_class_name('quantumWizTextinputPapertextareaInput')
-                                element.send_keys(answer.text)
-                            elif question.type == 'Pilihan Ganda':
-                                elements = field.find_elements_by_class_name('docssharedWizToggleLabeledLabelWrapper')
-                                for element in elements:
-                                    element_text = element.find_element_by_class_name("docssharedWizToggleLabeledLabelText").text
-                                    if element_text == answer.text:
-                                        element_radio = element.find_element_by_class_name("appsMaterialWizToggleRadiogroupOffRadio")
-                                        element_radio.click()
-                            elif question.type == 'Kotak Centang':
-                                elements = field.find_elements_by_class_name('docssharedWizToggleLabeledLabelWrapper')
-                                for element in elements:
-                                    element_label = element.find_element_by_class_name('docssharedWizToggleLabeledLabelText').text
-                                    if element_label == answer.text:
-                                        element_checkbox = element.find_element_by_class_name('quantumWizTogglePapercheckboxInnerBox')
-                                        element_checkbox.click()
-                            elif question.type == 'Drop Down':
-                                element = field.find_element_by_class_name('quantumWizMenuPaperselectOption')
-                                element.send_keys(answer.text)
-                            elif question.type == 'Skala Linier':
-                                elements = field.find_elements_by_class_name('freebirdMaterialScalecontentColumn')
-                                for element in elements:
-                                    element_label = element.find_element_by_class_name('freebirdMaterialScalecontentLabel').text
-                                    if element_label == answer.text:
-                                        element_radio = element.find_element_by_class_name('appsMaterialWizToggleRadiogroupOffRadio')
-                                        element_radio.click()
-                            elif question.type == 'Kisi Pilihan Ganda':
-                                column_row = field.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridColumnHeader')
-                                row_elements = field.find_elements_by_class_name('appsMaterialWizToggleRadiogroupGroupContent')
-                                column_elements = column_row.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')
-                                column_list = [colel.text for colel in column_elements if colel.text != '']
-                                row, col = answer.text.split(',')
-                                for rowel in row_elements:
-                                    rowel_title = rowel.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridRowHeader').text
-                                    if rowel_title == row:
-                                        rowel_choice = rowel.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')[column_list.index(col) + 1]
-                                        rowel_radio = rowel_choice.find_element_by_class_name('appsMaterialWizToggleRadiogroupOffRadio')
-                                        rowel_radio.click()
-                            elif question.type == 'Petak Kotak Centang':
-                                column_row = field.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridColumnHeader')
-                                row_elements = field.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCheckboxGroup')
-                                column_elements = column_row.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')
-                                column_list = [colel.text for colel in column_elements if colel.text != '']
-                                row, col = answer.text.split(',')
-                                for rowel in row_elements:
-                                    rowel_title = rowel.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridRowHeader').text
-                                    if rowel_title == row:
-                                        rowel_choice = rowel.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')[column_list.index(col) + 1]
-                                        rowel_radio = rowel_choice.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridCheckbox')
-                                        rowel_radio.click()
-                            elif question.type == 'Tanggal':
-                                element = field.find_element_by_class_name('quantumWizTextinputPaperinputInput')
-                                element.send_keys(answer.text)
-                            elif question.type == 'Waktu':
-                                hour, minute = answer.text.split(':')
-                                elements = field.find_elements_by_class_name('quantumWizTextinputPaperinputInput')
-                                done_hour = False
-                                for element in elements:
-                                    if not done_hour:
-                                        element.send_keys(hour)
-                                        done_hour = True
-                                    else:
-                                        element.send_keys(minute)
+        for f in fields:
+            f_question = f.find_element_by_class_name("freebirdFormviewerComponentsQuestionBaseTitle").text
+            if questions.get(f_question):
+                # not yet created
+                answers = questions[f_question]["answers"]
+                question_type = questions[f_question]["question_type"]
+                choice_type = questions[f_question]["choice_type"]
+
+                if choice_type == "SingleElement":
+
+                    if question_type == "Tanggal":
+                        if answers[0] == "Now":
+                            answers[0] = datetime.now().strftime("%m/%d/%Y")
+
+                    if question_type == "Waktu":
+                        elements = f.find_element_by_class_name("freebirdFormviewerComponentsQuestionTimeTimeInputs")
+                        timeedit = elements.find_elements_by_class_name("freebirdFormviewerComponentsQuestionTimeNumberEdit")
+                        hour, minute = answers[0].split(":")
+                        el_idx = 0
+                        for h in [hour, minute]:
+                            fill = timeedit[el_idx].find_element_by_class_name("quantumWizTextinputPaperinputInput")
+                            fill.send_keys(h)
+                            el_idx += 1
+        
+                    else:                
+                        el = f.find_element_by_class_name(qclass[question_type])
+                        el.send_keys(answers[0])
+                            
+                elif choice_type == "MultipleElement":
+
+                    if question_type == "KisiPilihanGanda" or question_type == "PetakKotakCentang":
+                        
+                        # previous name is column row
+                        header = f.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridColumnHeader')
+
+                        # previous name is column_elements
+                        header_elements = header.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')
+                        
+                        row_elements = f.find_elements_by_class_name(qclass[question_type]["row_elements"])
+                        column_list = [h.text for h in header_elements if h.text != '']
+
+                        for a in answers:
+                            row, col = a.split(",")
+
+                            for r in row_elements:
+                                title = r.find_element_by_class_name('freebirdFormviewerComponentsQuestionGridRowHeader').text
+                                if title == row:
+                                    choice = r.find_elements_by_class_name('freebirdFormviewerComponentsQuestionGridCell')[column_list.index(col) + 1]
+                                    rowel_radio = choice.find_element_by_class_name(qclass[question_type]["input"])
+                                    rowel_radio.click()
+                   
                     else:
-                        return ['Failed', f'Pertanyaan {question.text} belum memiliki jawaban, silahkan isi jawabannya terlebih dahulu']
+                        elements = f.find_elements_by_class_name(qclass[question_type]["main_class"])
+                        for el in elements:
+                            el_text = el.find_element_by_class_name(qclass[question_type]["label"]).text
+                            answer = (el_text if el_text in answers else None)
+                            if answer:
+                                choice = el.find_element_by_class_name(qclass[question_type]["sub_class"])
+                                choice.click()
+
         submit_button = driver.find_elements_by_class_name("appsMaterialWizButtonPaperbuttonContent")[-1]
         submit_button.click()
+        
 
-        log = Log(
-            user=section.user,
-            section=section,
-            status='Success',
-            message='Form berhasil dikirim'
-        )
-        log.save()
+        Log.objects.add_log({
+            "user": section.user,
+            "section": section,
+            "status": "Success",
+            "message": "Form successfully submitted"
+        })
 
         time.sleep(2)
+
+    except Exception as e:
+        return e
+
     finally:
         driver.quit()
 
-    return ['Success', 'Form berhasil dikirim']
-
+    return questions
