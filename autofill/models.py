@@ -1,24 +1,20 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.db.models.expressions import Value
-from django.http.request import validate_host
-from django.utils.text import slugify
 from django.shortcuts import reverse
 from django.conf import settings
 
+from . managers import (
+    SectionManager, LogManager,
+    QuestionManager, AnswerManager
+)
+
 # django signals
-from django.db.models.signals import post_delete, pre_delete
+from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
 from django.utils.translation import ugettext_lazy as _
 
-
 # django celery beat
 from django_celery_beat.models import PeriodicTask
-
-import json
-
-from django.utils import timezone
 
 
 SCHEDULE_TYPE_CHOICES = (
@@ -27,6 +23,7 @@ SCHEDULE_TYPE_CHOICES = (
         ('Crontab', 'Crontab'),
         ('Solar', 'Solar')
 )
+
 
 class Section(models.Model):
 
@@ -44,20 +41,17 @@ class Section(models.Model):
     task = models.OneToOneField(PeriodicTask, on_delete=models.SET_NULL, blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
 
+    objects = SectionManager()
+
     def __str__(self):
         return self.name
-
-    def get_questions(self):
-        return self.question_set.all()
-    
-    def get_number_of_questions(self):
-        return self.question_set.all().count()
 
     def get_absolute_url(self):
         return reverse('autofill:detail-section', kwargs={
             'pk': self.pk,
         })
-        
+
+
 '''
 Delete the Periodic Task field that related to the Section models
 And also delete the Interval/Crontab/Solar/Clocked field
@@ -82,48 +76,48 @@ def delete_schedule(sender, instance, **kwargs):
         instance.solar.delete()
     
 
-
-TYPE_CHOICES = (
-        ('Jawaban Singkat', 'Jawaban Singkat'),
+QUESTION_TYPE = (
+        ('JawabanSingkat', 'Jawaban Singkat Display'),
         ('Paragraf', 'Paragraf'),
-        ('Pilihan Ganda', 'Pilihan Ganda'),
-        ('Kotak Centang', 'Kotak Centang'),
-        ('Drop Down', 'Drop Down'),
-        ('Skala Linier', 'Skala Linier'),
-        ('Kisi Pilihan Ganda', 'Kisi Pilihan Ganda'),
-        ('Petak Kotak Centang', 'Petak Kotak Centang'),
+        ('PilihanGanda', 'Pilihan Ganda'),
+        ('KotakCentang', 'Kotak Centang'),
+        ('DropDown', 'DropDown'),
+        ('SkalaLinier', 'Skala Linier'),
+        ('KisiPilihan Ganda', 'Kisi Pilihan Ganda'),
+        ('PetakKotak Centang', 'Petak Kotak Centang'),
         ('Tanggal', 'Tanggal'),
         ('Waktu', 'Waktu')
+)
+
+CHOICE_TYPE = (
+    ('SingleElement', 'Single Element'),
+    ('MultipleElement', 'Multiple Element')
 )
 
 
 class Question(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
-    type = models.CharField(choices=TYPE_CHOICES, max_length=100)
+    type = models.CharField(choices=QUESTION_TYPE, max_length=100, blank=True, null=True)
+    choice_type = models.CharField(choices=CHOICE_TYPE, max_length=100, blank=True, null=True)
+    
     correct = models.BooleanField(default=False)
 
     slug = models.SlugField()
 
+    objects = QuestionManager()
+
     def __str__(self):
         return self.text
 
-    def get_answers(self):
-        return self.answer_set.all()
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.text)
-        super(Question, self).save(*args, **kwargs)
-        
-    def get_row(self):
-        kisi_pilihan_ganda = self.objects.filter(question=question, type='Kisi Pilihan Ganda')
-        return self.kisi_pilihan_ganda.split(',')
 
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
-    type = models.CharField(choices=TYPE_CHOICES, max_length=100)
     correct = models.BooleanField(default=False)
+    type = models.CharField(choices=QUESTION_TYPE, max_length=100)
+
+    objects = AnswerManager()
 
     def __str__(self):
         return self.text
@@ -140,6 +134,8 @@ class Log(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(choices=STATUS_CHOICES, max_length=100)
     message = models.TextField(blank=True, null=True)
+
+    objects = LogManager()
     
     def __str__(self):
-        return self.user.username
+        return self.user.email
