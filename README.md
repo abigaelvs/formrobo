@@ -4,7 +4,7 @@ A project to automate your google form process
 
 ## How to use
 - Clone/download this repository
-- Install Rabbitmq
+- Install Rabbitmq (https://www.rabbitmq.com/download.html)
 - Install all the requirements with 
 ```
 pip install -r requirements.txt
@@ -19,7 +19,7 @@ celery -A automation worker --loglevel=info
 ```
 - Run Celery beat with
 ```
-celery -A automation beat -l info --scheduler django_celery_beat:DatabaseScheduler
+celery -A automation beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 ```
 - Open http://localhost:8000/ in your browser
 - Add New Form and input the google form link
